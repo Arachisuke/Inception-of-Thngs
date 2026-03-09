@@ -1,4 +1,9 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-echo "Common provisioning..."
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get update
+apt-get install -y curl
+
+echo "✅ Common provisioning done"
