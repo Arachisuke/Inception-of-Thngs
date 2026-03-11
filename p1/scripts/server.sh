@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export DEBIAN_FRONTEND=noninteractive
-
 NODE_IP="192.168.56.110"
 TOKEN_FILE="/var/lib/rancher/k3s/server/node-token"
 
