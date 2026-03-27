@@ -3,6 +3,6 @@ all:
 	sudo bash ./scripts/init.sh
 
 clean:
-	k3d cluster delete my-cluster
+	sudo bash ./scripts/clean.sh
 
 re: clean all

@@ -45,7 +45,7 @@ if k3d cluster list -o json 2>/dev/null | grep -q "\"name\":\"${CLUSTER_NAME}\""
     log "Cluster already exists: ${CLUSTER_NAME}"
 else
     log "Creating cluster: ${CLUSTER_NAME}"
-    k3d cluster create "${CLUSTER_NAME}" -p "6666:6666@loadbalancer" 
+    k3d cluster create "${CLUSTER_NAME}" -p "6767:6767@loadbalancer"
 fi
 
 log "Checking cluster access"
@@ -64,12 +64,13 @@ ARGOCD_PASSWORD="$(kubectl get secret argocd-initial-admin-secret \
   -n "${NAMESPACE}" \
   -o jsonpath='{.data.password}' | base64 -d)"
 
-log "argo CD port-forward 8080:443"
-# kubectl port-forward svc/argocd-server -n ${NAMESPACE} 8080:443
-
+log "apply app_argocd.yaml and argocd_ingress.yaml"
+kubectl apply -f ./confs/app_argocd.yaml
+kubectl apply -f ./confs/argocd_ingress.yaml
 log "Argo CD installed successfully."
 log "Namespace : ${NAMESPACE}"
 log "Username  : admin"
 log "Password  : ${ARGOCD_PASSWORD}"
 
 log "Init complete"
+# kubectl port-forward svc/argocd-server -n ${NAMESPACE} 8080:443
