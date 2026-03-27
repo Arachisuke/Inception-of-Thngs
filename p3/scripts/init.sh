@@ -62,6 +62,15 @@ kubectl apply --server-side -n ${NAMESPACE} -f https://raw.githubusercontent.com
 log "Waiting for Argo CD components to become ready..."
 kubectl wait --for=condition=Available deployment --all -n "${NAMESPACE}" --timeout=300s
 
+log "Configuring Argo CD server in insecure mode (HTTP backend for ingress)..."
+kubectl patch configmap argocd-cmd-params-cm \
+  -n "${NAMESPACE}" \
+  --type merge \
+  -p '{"data":{"server.insecure":"true"}}'
+
+kubectl rollout restart deployment argocd-server -n "${NAMESPACE}"
+kubectl rollout status deployment argocd-server -n "${NAMESPACE}" --timeout=180s
+
 log "Retrieving initial admin password..."
 ARGOCD_PASSWORD="$(kubectl get secret argocd-initial-admin-secret \
   -n "${NAMESPACE}" \
