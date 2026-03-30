@@ -59,6 +59,16 @@ ensure_namespace ${NAMESPACE}
 log "Installing Argo CD..."
 kubectl apply --server-side -n ${NAMESPACE} -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
+log "Configuring Argo CD server for Traefik HTTP backend..."
+kubectl patch configmap argocd-cmd-params-cm \
+  -n "${NAMESPACE}" \
+  --type merge \
+  -p '{"data":{"server.insecure":"true"}}'
+
+log "Restarting argocd-server to apply insecure mode..."
+kubectl rollout restart deployment/argocd-server -n "${NAMESPACE}"
+kubectl rollout status deployment/argocd-server -n "${NAMESPACE}" --timeout=300s
+
 log "Waiting for Argo CD components to become ready..."
 kubectl wait --for=condition=Available deployment --all -n "${NAMESPACE}" --timeout=300s
 
