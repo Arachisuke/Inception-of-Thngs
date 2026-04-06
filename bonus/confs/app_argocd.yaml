@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/NekrosIV/app_for_argocd.git
+    repoURL: http://gitlab.127.0.0.1.nip.io/root/iot.git
     targetRevision: HEAD
     path: .
   destination:

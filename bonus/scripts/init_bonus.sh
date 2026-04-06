@@ -94,14 +94,14 @@ kubectl rollout status deployment/argocd-server -n "${ARGOCD_NAMESPACE}" --timeo
 log "Waiting for Argo CD deployments"
 wait_for_deployments "${ARGOCD_NAMESPACE}"
 
-if [ -f "${ARGOCD_INGRESS_FILE}" ]; then
-    log "Applying Argo CD ingress"
-    kubectl apply -f "${ARGOCD_INGRESS_FILE}"
-else
-    warn "Argo CD ingress file not found: ${ARGOCD_INGRESS_FILE}"
-fi
+# if [ -f "${ARGOCD_INGRESS_FILE}" ]; then
+#     log "Applying Argo CD ingress"
+#     kubectl apply -f "${ARGOCD_INGRESS_FILE}"
+# else
+#     warn "Argo CD ingress file not found: ${ARGOCD_INGRESS_FILE}"
+# fi
 
-[ -f "${VALUES_FILE}" ] || error "Missing values file: ${VALUES_FILE}"
+# [ -f "${VALUES_FILE}" ] || error "Missing values file: ${VALUES_FILE}"
 
 log "Adding GitLab Helm repository"
 helm repo add gitlab https://charts.gitlab.io/ >/dev/null 2>&1 || true
@@ -166,7 +166,7 @@ ARGOCD_PASSWORD="$(kubectl get secret argocd-initial-admin-secret \
     -n "${ARGOCD_NAMESPACE}" \
     -o jsonpath='{.data.password}' | base64 -d 2>/dev/null || true)"
 
-GITLAB_PASSWORD="$(kubectl get secret gitlab-initial-root-password \
+GITLAB_PASSWORD="$(kubectl get secret gitlab-gitlab-initial-root-password \
     -n "${GITLAB_NAMESPACE}" \
     -o jsonpath='{.data.password}' | base64 -d 2>/dev/null || true)"
 
