@@ -13,9 +13,8 @@ GITLAB_NAMESPACE="gitlab"
 DEV_NAMESPACE="dev"
 
 VALUES_FILE="./confs/gitlab-values.yaml"
-ARGOCD_REPO_SECRET="./confs/argocd-gitlab-repo-secret.yaml"
-ARGOCD_APP_FILE="./confs/argocd-app-from-gitlab.yaml"
 ARGOCD_INGRESS_FILE="./confs/argocd_ingress.yaml"
+ARGOCD_APP_FILE="./confs/app_argocd.yaml"
 TIMEOUT="1800s"
 
 log() {
@@ -94,14 +93,14 @@ kubectl rollout status deployment/argocd-server -n "${ARGOCD_NAMESPACE}" --timeo
 log "Waiting for Argo CD deployments"
 wait_for_deployments "${ARGOCD_NAMESPACE}"
 
-# if [ -f "${ARGOCD_INGRESS_FILE}" ]; then
-#     log "Applying Argo CD ingress"
-#     kubectl apply -f "${ARGOCD_INGRESS_FILE}"
-# else
-#     warn "Argo CD ingress file not found: ${ARGOCD_INGRESS_FILE}"
-# fi
+if [ -f "${ARGOCD_INGRESS_FILE}" ]; then
+    log "Applying Argo CD ingress"
+    kubectl apply -f "${ARGOCD_INGRESS_FILE}"
+else
+    warn "Argo CD ingress file not found: ${ARGOCD_INGRESS_FILE}"
+fi
 
-# [ -f "${VALUES_FILE}" ] || error "Missing values file: ${VALUES_FILE}"
+[ -f "${VALUES_FILE}" ] || error "Missing values file: ${VALUES_FILE}"
 
 log "Adding GitLab Helm repository"
 helm repo add gitlab https://charts.gitlab.io/ >/dev/null 2>&1 || true
@@ -129,7 +128,6 @@ until kubectl get jobs -n "${GITLAB_NAMESPACE}" | grep 'gitlab-minio-create-buck
     sleep 5
 done
 
-log "Waiting for GitLab pods..."
 until kubectl get pods -n "${GITLAB_NAMESPACE}" | grep 'gitlab-webservice-default-' | grep '2/2' | grep 'Running' >/dev/null 2>&1; do
     kubectl get pods -n "${GITLAB_NAMESPACE}" || true
     sleep 5
@@ -148,19 +146,12 @@ done
 
 kubectl get pods -n "${GITLAB_NAMESPACE}"
 
-# if [ -f "${ARGOCD_REPO_SECRET}" ]; then
-#     log "Applying Argo CD GitLab repository secret"
-#     kubectl apply -f "${ARGOCD_REPO_SECRET}"
-# else
-#     warn "Argo CD repository secret file not found: ${ARGOCD_REPO_SECRET}"
-# fi
-
-# if [ -f "${ARGOCD_APP_FILE}" ]; then
-#     log "Applying Argo CD application linked to GitLab repo"
-#     kubectl apply -f "${ARGOCD_APP_FILE}"
-# else
-#     warn "Argo CD application file not found: ${ARGOCD_APP_FILE}"
-# fi
+if [ -f "${ARGOCD_APP_FILE}" ]; then
+    log "Applying Argo CD application linked to GitLab repo"
+    kubectl apply -f "${ARGOCD_APP_FILE}"
+else
+    warn "Argo CD application file not found: ${ARGOCD_APP_FILE}"
+fi
 
 ARGOCD_PASSWORD="$(kubectl get secret argocd-initial-admin-secret \
     -n "${ARGOCD_NAMESPACE}" \
@@ -178,3 +169,4 @@ log "Argo CD password  : ${ARGOCD_PASSWORD:-unavailable}"
 log "GitLab user       : root"
 log "GitLab password   : ${GITLAB_PASSWORD}"
 log "Check ingress with: kubectl get ingress -A"
+log "Next step         : ./scripts/bootstrap_gitlab_argocd.sh"

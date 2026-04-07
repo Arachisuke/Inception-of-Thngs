@@ -9,9 +9,7 @@ bonus/
 ├── README.md
 ├── confs/
 │   ├── gitlab-values.yaml
-│   ├── gitlab-ingress-note.md
-│   ├── argocd-gitlab-repo-secret.yaml
-│   ├── argocd-app-from-gitlab.yaml
+│   ├── app_argocd.yaml
 │   └── sample-app/
 │       ├── deployment.yaml
 │       ├── service.yaml
@@ -23,10 +21,9 @@ bonus/
 
 Minimalement, ce qu’il faut vraiment pour le bonus est :
 - `bonus/confs/gitlab-values.yaml`
-- `bonus/confs/argocd-gitlab-repo-secret.yaml`
-- `bonus/confs/argocd-app-from-gitlab.yaml`
+- `bonus/confs/app_argocd.yaml`
 - un dossier de manifests applicatifs versionnés dans GitLab, par exemple `bonus/confs/sample-app/`
-- `bonus/scripts/install_gitlab.sh`
+- `bonus/scripts/bootstrap_gitlab_argocd.sh`
 
 `README.md` est utile pour la soutenance, mais reste optionnel si tu gardes tout dans un seul tutoriel.
 
@@ -140,8 +137,7 @@ Concrètement :
 bonus/
 ├── confs/
 │   ├── gitlab-values.yaml
-│   ├── argocd-gitlab-repo-secret.yaml
-│   ├── argocd-app-from-gitlab.yaml
+│   ├── app_argocd.yaml
 │   └── sample-app/
 │       ├── deployment.yaml
 │       ├── service.yaml
@@ -375,64 +371,38 @@ git commit -m "add bonus app manifests"
 git push origin main
 ```
 
-## 11. Créer un token GitLab pour ArgoCD
+## 11. Bootstrap GitLab + Argo CD proprement
 
-Dans GitLab :
-- va dans le projet
-- crée un **Project Access Token** ou un **Personal Access Token**
-- scope minimal : `read_repository`
+Le chemin propre retenu dans ce repo est de laisser le script créer le projet GitLab, le deploy token `read_repository`, le Secret repository Argo CD, puis appliquer l'Application.
 
-Garde :
-- username
-- token
-- URL du repo
-
-Exemple de repo :
-```text
-http://gitlab.local.com:8080/iot/bonus-app.git
-```
-
-## 12. Créer le Secret repo pour ArgoCD
-
-### `bonus/confs/argocd-gitlab-repo-secret.yaml`
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: gitlab-bonus-repo
-  namespace: argocd
-  labels:
-    argocd.argoproj.io/secret-type: repository
-type: Opaque
-stringData:
-  type: git
-  url: http://gitlab.local.com:8080/iot/bonus-app.git
-  username: root
-  password: REPLACE_WITH_GITLAB_TOKEN
-  insecure: "true"
-```
-
-Applique :
+Commande :
 
 ```bash
-kubectl apply -f bonus/confs/argocd-gitlab-repo-secret.yaml
+./bonus/scripts/bootstrap_gitlab_argocd.sh
 ```
 
-## 13. Créer la nouvelle Application ArgoCD
+Le script :
+- ajoute `gitlab.local.com` dans `NodeHosts` de CoreDNS
+- crée si besoin le projet `root/iot`
+- crée un **Project Deploy Token** avec `read_repository`
+- crée le Secret repository dans `argocd`
+- applique l'Application
 
-### `bonus/confs/argocd-app-from-gitlab.yaml`
+## 12. Application ArgoCD utilisée
+
+### `bonus/confs/app_argocd.yaml`
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: bonus-app-from-gitlab
+  name: iot-from-gitlab
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: http://gitlab.local.com:8080/iot/bonus-app.git
+    repoURL: http://gitlab.local.com/root/iot.git
     targetRevision: main
-    path: manifests
+    path: .
   destination:
     server: https://kubernetes.default.svc
     namespace: dev
@@ -442,13 +412,7 @@ spec:
       selfHeal: true
 ```
 
-Applique :
-
-```bash
-kubectl apply -f bonus/confs/argocd-app-from-gitlab.yaml
-```
-
-## 14. Vérifier le flux complet
+## 13. Vérifier le flux complet
 
 ```bash
 kubectl get pods -n gitlab
@@ -478,7 +442,7 @@ kubectl get pods -n gitlab
 kubectl get ingress -n gitlab
 kubectl get svc -n gitlab
 kubectl get applications -n argocd
-kubectl describe application bonus-app-from-gitlab -n argocd
+kubectl describe application iot-from-gitlab -n argocd
 kubectl get all -n dev
 curl -I http://gitlab.local.com:8080
 curl -I http://app-bonus.local.com:8080
