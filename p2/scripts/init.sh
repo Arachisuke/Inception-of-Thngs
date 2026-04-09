@@ -26,9 +26,9 @@ echo "K3s is ready. ✅"
 
 echo "Deploying applications..."
 
-kubectl apply -f /vagrant/confs/apps/app1/app1.yaml
-kubectl apply -f /vagrant/confs/apps/app2/app2.yaml
-kubectl apply -f /vagrant/confs/apps/app3/app3.yaml
-kubectl apply -f /vagrant/confs/apps/ingress.yaml
+kubectl apply -f /vagrant/confs/app1.yaml
+kubectl apply -f /vagrant/confs/app2.yaml
+kubectl apply -f /vagrant/confs/app3.yaml
+kubectl apply -f /vagrant/confs/ingress.yaml
 
 echo "Applications deployed. 🚀"
