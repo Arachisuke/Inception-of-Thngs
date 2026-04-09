@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/NekrosIV/app_for_argocd.git
+    repoURL: https://github.com/NekrosIV/app_for_argocd_kasingh.git
     targetRevision: HEAD
     path: .
   destination:

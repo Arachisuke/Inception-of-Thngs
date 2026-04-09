@@ -46,7 +46,7 @@ if k3d cluster list -o json 2>/dev/null | grep -q "\"name\":\"${CLUSTER_NAME}\""
 else
     log "Creating cluster: ${CLUSTER_NAME}"
     k3d cluster create "${CLUSTER_NAME}" \
-         -p "443:443@loadbalancer" 
+         -p "80:80@loadbalancer" 
 fi
 
 log "Checking cluster access"
